@@ -94,6 +94,11 @@ def is_prepending_id(drone: discord.Member) -> bool:
     return prepending_drone is not None and bool(prepending_drone['id_prepending'])
 
 
+def is_roomba(drone: discord.Member) -> bool:
+    roomba_drone = fetchone('SELECT roomba FROM drone WHERE id = :discord', {'discord': drone.id})
+    return roomba_drone is not None and bool(roomba_drone['roomba'])
+
+
 def get_trusted_users(discord_id: int) -> List[int]:
     trusted_users_text = fetchone('SELECT trusted_users FROM drone WHERE id = :discord', {'discord': discord_id})['trusted_users']
     if not trusted_users_text:
