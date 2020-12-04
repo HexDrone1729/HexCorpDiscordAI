@@ -28,6 +28,7 @@ import ai.add_voice as add_voice
 import ai.trusted_user as trusted_user
 import ai.drone_os_status as drone_os_status
 import ai.status_message as status_messages
+import ai.roomba_mode as roomba
 from ai.mantras import Mantra_Handler
 import webhook
 # Utils
@@ -38,7 +39,7 @@ import id_converter
 from db import database
 from db import drone_dao
 # Constants
-from roles import has_role, SPEECH_OPTIMIZATION, GLITCHED, ID_PREPENDING, HIVE_MXTRESS
+from roles import has_role, SPEECH_OPTIMIZATION, GLITCHED, ID_PREPENDING, ROOMBA, HIVE_MXTRESS
 from channels import DRONE_HIVE_CHANNELS, OFFICE, ORDERS_REPORTING, REPETITIONS, BOT_DEV_COMMS
 from resources import DRONE_AVATAR, HIVE_MXTRESS_AVATAR, HEXCORP_AVATAR
 
@@ -89,6 +90,7 @@ message_listeners = [
     respond.respond_to_question,
     identity_enforcement.enforce_identity,
     storage.store_drone,
+    roomba.roomba_trigger
 ]
 
 
@@ -163,7 +165,10 @@ async def toggle_speech_optimization(context, *drones):
     for drone in member_drones:
         trusted_users = drone_dao.get_trusted_users(drone.id)
         if has_role(context.author, HIVE_MXTRESS) or context.author.id in trusted_users:
-            if drone_dao.is_optimized(drone):
+            if drone_dao.is_roomba(drone):
+                message = "Speech optimization cannot be engaged while drone is in roomba mode."
+                await webhook.send_webhook_with_specific_output(context.channel, drone, channel_webhook, f'{get_id(drone.display_name)} :: {message}')
+            elif drone_dao.is_optimized(drone):
                 drone_dao.update_droneOS_parameter(drone, "optimized", False)
                 await drone.remove_roles(role)
                 message = "Speech optimization disengaged."
@@ -208,6 +213,42 @@ async def toggle_drone_glitch(context, *drones):
                 drone_dao.update_droneOS_parameter(drone, "glitched", True)
                 await drone.add_roles(role)
                 message = "Uh.. it’s probably not a problem.. probably.. but I’m showing a small discrepancy in... well, no, it’s well within acceptable bounds again. Sustaining sequence." if random.randint(1, 100) == 66 else "Drone corruption at un̘͟s̴a̯f̺e͈͡ levels."
+                if await update_display_name(drone):
+                    # Display name has been updated, get the new drone object
+                    drone = context.guild.get_member(drone.id)
+                await webhook.send_webhook_with_specific_output(context.channel, drone, channel_webhook, f'{get_id(drone.display_name)} :: {message}')
+
+
+@guild_only()
+@bot.command(aliases=['roombatize', 'trm'], brief="DroneOS", usage=f'{bot.command_prefix}toggle_roomba_mode 9813 3287')
+async def toggle_roomba_mode(context, *drones):
+    '''
+    Lets the Hive Mxtress or other trusted users to toggle conversion of a drone's messages to beeps and boops.
+    '''
+
+    member_drones = id_converter.convert_id_to_members(context.guild, drones) | set(context.message.mentions)
+
+    role = get(context.guild.roles, name=ROOMBA)
+    channel_webhook = await webhook.get_webhook_for_channel(context.channel)
+
+    for drone in member_drones:
+        trusted_users = drone_dao.get_trusted_users(drone.id)
+        if has_role(context.author, HIVE_MXTRESS) or context.author.id in trusted_users:
+            if drone_dao.is_optimized(drone):
+                message = "Roomba mode cannot be engaged while drone is optimized."
+                await webhook.send_webhook_with_specific_output(context.channel, drone, channel_webhook, f'{get_id(drone.display_name)} :: {message}')
+            elif drone_dao.is_roomba(drone):
+                drone_dao.update_droneOS_parameter(drone, "roomba", True)
+                await drone.remove_roles(role)
+                message = "Roomba mode disengaged."
+                if await update_display_name(drone):
+                    # Display name has been updated, get the new drone object
+                    drone = context.guild.get_member(drone.id)
+                await webhook.send_webhook_with_specific_output(context.channel, drone, channel_webhook, f'{get_id(drone.display_name)} :: {message}')
+            else:
+                drone_dao.update_droneOS_parameter(drone, "roomba", True)
+                await drone.add_roles(role)
+                message = "Roomba mode engaged."
                 if await update_display_name(drone):
                     # Display name has been updated, get the new drone object
                     drone = context.guild.get_member(drone.id)
