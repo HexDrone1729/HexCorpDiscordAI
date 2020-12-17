@@ -79,6 +79,11 @@ def update_droneOS_parameter(drone: discord.Member, column: str, value: bool):
     # BUT IT'S FINEEEE 'cus the only functions that call this have a preset column value that is never based on user input.
 
 
+def is_drone(member: discord.Member) -> bool:
+    drone = fetchone('SELECT id FROM drone WHERE id = :discord', {'discord': member.id})
+    return drone is not None
+
+
 def is_optimized(drone: discord.Member) -> bool:
     optimized_drone = fetchone('SELECT optimized FROM drone WHERE id = :discord', {'discord': drone.id})
     return optimized_drone is not None and bool(optimized_drone['optimized'])
@@ -97,6 +102,11 @@ def is_prepending_id(drone: discord.Member) -> bool:
 def is_roomba(drone: discord.Member) -> bool:
     roomba_drone = fetchone('SELECT roomba FROM drone WHERE id = :discord', {'discord': drone.id})
     return roomba_drone is not None and bool(roomba_drone['roomba'])
+
+
+def is_identity_enforced(drone: discord.Member) -> bool:
+    enforced_drone = fetchone('SELECT identity_enforcement FROM drone WHERE id = :discord', {'discord': drone.id})
+    return enforced_drone is not None and bool(enforced_drone['identity_enforcement'])
 
 
 def get_trusted_users(discord_id: int) -> List[int]:

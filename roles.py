@@ -15,13 +15,13 @@ SPEECH_OPTIMIZATION = "⬡-Optimized"
 GLITCHED = "⬡-Glitched"
 ID_PREPENDING = "⬡-Prepending"
 ROOMBA = "⬡-Roomba"
+IDENTITY_ENFORCEMENT = "⬡-Enforced"
 
 MODERATION_ROLES = [ADMIN, MODERATION, HIVE_MXTRESS]
 
 VOICE = '⬡-Voice'
 
 NITRO_BOOSTER = '⬡-Battery'
-PATREON_SUPPORTER = '⬡-Patreon'
 
 EVERYONE = '@everyone'
 
